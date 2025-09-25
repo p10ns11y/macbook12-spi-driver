@@ -422,7 +422,7 @@ static int appleib_hid_event(struct hid_device *hdev, struct hid_field *field,
 	return appleib_forward_int_op(hdev, appleib_hid_event_fwd, &args);
 }
 
-static __u8 *appleib_report_fixup(struct hid_device *hdev, __u8 *rdesc,
+static const __u8 *appleib_report_fixup(struct hid_device *hdev, const __u8 *rdesc,
 				  unsigned int *rsize)
 {
 	/* Some fields have a size of 64 bits, which according to HID 1.11
@@ -431,34 +431,49 @@ static __u8 *appleib_report_fixup(struct hid_device *hdev, __u8 *rdesc,
 	 * when encountering such a field. So turn them into two 32-bit fields
 	 * instead.
 	 */
+	// __u8 *rdesc_mod = (__u8 *)rdesc;
 
-	if (*rsize == 634 &&
-	    /* Usage Page 0xff12 (vendor defined) */
-	    rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
-	    /* Usage 0x51 */
-	    rdesc[416] == 0x09 && rdesc[417] == 0x51 &&
-	    /* report size 64 */
-	    rdesc[432] == 0x75 && rdesc[433] == 64 &&
-	    /* report count 1 */
-	    rdesc[434] == 0x95 && rdesc[435] == 1) {
-		rdesc[433] = 32;
-		rdesc[435] = 2;
-		hid_dbg(hdev, "Fixed up first 64-bit field\n");
-	}
+	// if (*rsize == 634 &&
+	//     /* Usage Page 0xff12 (vendor defined) */
+	//     rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
+	//     /* Usage 0x51 */
+	//     rdesc[416] == 0x09 && rdesc[417] == 0x51 &&
+	//     /* report size 64 */
+	//     rdesc[432] == 0x75 && rdesc[433] == 64 &&
+	//     /* report count 1 */
+	//     rdesc[434] == 0x95 && rdesc[435] == 1) {
+	// 	rdesc[433] = 32;
+	// 	rdesc[435] = 2;
+	// 	hid_dbg(hdev, "Fixed up first 64-bit field\n");
+	// }
 
-	if (*rsize == 634 &&
-	    /* Usage Page 0xff12 (vendor defined) */
-	    rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
-	    /* Usage 0x51 */
-	    rdesc[611] == 0x09 && rdesc[612] == 0x51 &&
-	    /* report size 64 */
-	    rdesc[627] == 0x75 && rdesc[628] == 64 &&
-	    /* report count 1 */
-	    rdesc[629] == 0x95 && rdesc[630] == 1) {
-		rdesc[628] = 32;
-		rdesc[630] = 2;
-		hid_dbg(hdev, "Fixed up second 64-bit field\n");
-	}
+	// if (*rsize == 634 &&
+	//     /* Usage Page 0xff12 (vendor defined) */
+	//     rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
+	//     /* Usage 0x51 */
+	//     rdesc[611] == 0x09 && rdesc[612] == 0x51 &&
+	//     /* report size 64 */
+	//     rdesc[627] == 0x75 && rdesc[628] == 64 &&
+	//     /* report count 1 */
+	//     rdesc[629] == 0x95 && rdesc[630] == 1) {
+	// 	rdesc[628] = 32;
+	// 	rdesc[630] = 2;
+	// 	hid_dbg(hdev, "Fixed up second 64-bit field\n");
+	// }
+	if (!rdesc || !rsize || *rsize < 54) {
+        return rdesc;
+    }
+
+    /* Check if modification is needed */
+    if (*rsize >= 54 && rdesc[52] == 0x05 && rdesc[53] == 0x09) {
+        u8 *new_rdesc = kmemdup(rdesc, *rsize, GFP_KERNEL);
+        if (!new_rdesc) {
+            return rdesc; /* Return original on allocation failure */
+        }
+        new_rdesc[53] = 0x0c; /* Fix usage page */
+        *rsize = *rsize; /* No size change, but ensure consistency */
+        return new_rdesc; /* Return new descriptor */
+    }
 
 	return rdesc;
 }
@@ -898,7 +913,6 @@ MODULE_DEVICE_TABLE(acpi, appleib_acpi_match);
 static struct acpi_driver appleib_driver = {
 	.name		= "apple-ibridge",
 	.class		= "topcase", /* ? */
-	.owner		= THIS_MODULE,
 	.ids		= appleib_acpi_match,
 	.ops		= {
 		.add		= appleib_probe,
