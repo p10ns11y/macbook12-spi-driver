@@ -647,7 +647,7 @@ static int appleals_platform_remove(struct platform_device *pdev)
 	return 0;
 
 error:
-	return rc;
+	return 0;
 }
 
 static const struct platform_device_id appleals_platform_ids[] = {
@@ -662,7 +662,7 @@ static struct platform_driver appleals_platform_driver = {
 		.name	= "apple-ib-als",
 	},
 	.probe = appleals_platform_probe,
-	.remove = appleals_platform_remove,
+	.remove_new = appleals_platform_remove,
 };
 
 module_platform_driver(appleals_platform_driver);
