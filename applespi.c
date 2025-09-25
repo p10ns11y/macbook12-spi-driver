@@ -604,11 +604,13 @@ static void applespi_setup_write_txfrs(struct applespi_data *applespi)
 	wt_t->delay_usecs = SPI_RW_CHG_DELAY_US;
 	wt_t->cs_change = 1;
 
-	dl_t->delay_usecs = applespi->spi_settings.spi_cs_delay;
+	dl_t->delay.value = applespi->spi_settings.spi_cs_delay;
+	dl_t->delay.unit = SPI_DELAY_UNIT_USECS;
 
 	wr_t->tx_buf = applespi->tx_buffer;
 	wr_t->len = APPLESPI_PACKET_SIZE;
-	wr_t->delay_usecs = SPI_RW_CHG_DELAY_US;
+	wr_t->delay.value = SPI_RW_CHG_DELAY_US;
+	wr_t->delay.unit = SPI_DELAY_UNIT_USECS;
 
 	st_t->rx_buf = applespi->tx_status;
 	st_t->len = APPLESPI_STATUS_SIZE;
@@ -1076,7 +1078,6 @@ static const struct file_operations applespi_tp_dim_fops = {
 	.owner = THIS_MODULE,
 	.open = applespi_tp_dim_open,
 	.read = applespi_tp_dim_read,
-	.llseek = no_llseek,
 };
 
 static void report_finger_data(struct input_dev *input, int slot,
