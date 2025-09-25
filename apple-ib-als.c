@@ -460,7 +460,7 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 	struct appleals_device **priv;
 	int rc;
 
-	iio_dev = iio_device_alloc(sizeof(als_dev));
+	iio_dev = iio_device_alloc(NULL, sizeof(als_dev));
 	if (!iio_dev)
 		return -ENOMEM;
 
@@ -631,23 +631,14 @@ error:
 	return rc;
 }
 
-static int appleals_platform_remove(struct platform_device *pdev)
+static void appleals_platform_remove(struct platform_device *pdev)
 {
 	struct appleib_device_data *ddata = pdev->dev.platform_data;
 	struct appleib_device *ib_dev = ddata->ib_dev;
 	struct appleals_device *als_dev = platform_get_drvdata(pdev);
-	int rc;
 
-	rc = appleib_unregister_hid_driver(ib_dev, &appleals_hid_driver);
-	if (rc)
-		goto error;
-
+	appleib_unregister_hid_driver(ib_dev, &appleals_hid_driver);
 	kfree(als_dev);
-
-	return 0;
-
-error:
-	return 0;
 }
 
 static const struct platform_device_id appleals_platform_ids[] = {
@@ -662,7 +653,7 @@ static struct platform_driver appleals_platform_driver = {
 		.name	= "apple-ib-als",
 	},
 	.probe = appleals_platform_probe,
-	.remove_new = appleals_platform_remove,
+	.remove = appleals_platform_remove,
 };
 
 module_platform_driver(appleals_platform_driver);

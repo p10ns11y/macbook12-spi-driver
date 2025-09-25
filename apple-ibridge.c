@@ -42,17 +42,18 @@
  * iBridge when suspending and resuming.
  */
 
-#include <linux/acpi.h>
-#include <linux/device.h>
-#include <linux/hid.h>
-#include <linux/list.h>
-#include <linux/mfd/core.h>
 #include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/slab.h>
+#include <linux/device.h>
+#include <linux/acpi.h>
+#include <linux/hid.h>
+#include <linux/usb.h>
+#include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/rculist.h>
-#include <linux/slab.h>
 #include <linux/srcu.h>
-#include <linux/usb.h>
+#include <linux/mfd/core.h>
 #include <linux/version.h>
 
 #include <asm/barrier.h>
@@ -461,19 +462,18 @@ static const __u8 *appleib_report_fixup(struct hid_device *hdev, const __u8 *rde
 	// 	hid_dbg(hdev, "Fixed up second 64-bit field\n");
 	// }
 	if (!rdesc || !rsize || *rsize < 54) {
-        return rdesc;
-    }
+		return rdesc;
+	}
 
-    /* Check if modification is needed */
-    if (*rsize >= 54 && rdesc[52] == 0x05 && rdesc[53] == 0x09) {
-        u8 *new_rdesc = kmemdup(rdesc, *rsize, GFP_KERNEL);
-        if (!new_rdesc) {
-            return rdesc; /* Return original on allocation failure */
-        }
-        new_rdesc[53] = 0x0c; /* Fix usage page */
-        *rsize = *rsize; /* No size change, but ensure consistency */
-        return new_rdesc; /* Return new descriptor */
-    }
+	/* Check if modification is needed */
+	if (*rsize >= 54 && rdesc[52] == 0x05 && rdesc[53] == 0x09) {
+		__u8 *new_rdesc = kmemdup(rdesc, *rsize, GFP_KERNEL);
+		if (!new_rdesc) {
+			return rdesc; /* Return original on allocation failure */
+		}
+		new_rdesc[53] = 0x0c; /* Fix usage page */
+		return new_rdesc; /* Return new descriptor */
+	}
 
 	return rdesc;
 }
